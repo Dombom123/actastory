@@ -10,6 +10,7 @@ import LoadingIndicator from './components/LoadingIndicator';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import StoryLibrary from './components/StoryLibrary';
+import DebugPanel from './components/DebugPanel';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.STORY_LIBRARY);
@@ -31,6 +32,9 @@ const App: React.FC = () => {
   // Library State
   const [savedStories, setSavedStories] = useState<SavedStory[]>([]);
   const [currentStory, setCurrentStory] = useState<SavedStory | null>(null);
+
+  // Debug Mode State
+  const [debugMode, setDebugMode] = useState<boolean>(false);
 
 
   // Load stories from localStorage on initial mount
@@ -120,11 +124,24 @@ const App: React.FC = () => {
       beat.id === beatId ? { ...beat, capturedImage: imageBase64, status: 'processing' } : beat
     ));
 
-    generateImageForBeat(beatToProcess.imagePrompt, imageBase64, styleImageBase64, characterImageBase64)
-      .then(generatedImageBase64 => {
-        setProcessedBeats(prev => prev.map(beat => 
-          beat.id === beatId ? { ...beat, generatedImage: generatedImageBase64, status: 'done' } : beat
-        ));
+    generateImageForBeat(beatToProcess.imagePrompt, imageBase64, styleImageBase64, characterImageBase64, debugMode)
+      .then(result => {
+        if (debugMode && typeof result === 'object' && 'openPoseImage' in result) {
+          // Debug mode: result contains both openPose and final image
+          setProcessedBeats(prev => prev.map(beat => 
+            beat.id === beatId ? { 
+              ...beat, 
+              openPoseImage: result.openPoseImage,
+              generatedImage: result.finalImage, 
+              status: 'done' 
+            } : beat
+          ));
+        } else {
+          // Normal mode: result is just the final image
+          setProcessedBeats(prev => prev.map(beat => 
+            beat.id === beatId ? { ...beat, generatedImage: result as string, status: 'done' } : beat
+          ));
+        }
       })
       .catch(err => {
         console.error(err);
@@ -132,7 +149,7 @@ const App: React.FC = () => {
           beat.id === beatId ? { ...beat, generatedImage: null, status: 'error' } : beat
         ));
       });
-  }, [processedBeats, styleImageBase64, characterImageBase64]);
+  }, [processedBeats, styleImageBase64, characterImageBase64, debugMode]);
 
   const handleCaptureComplete = () => {
     setAppState(AppState.CREATING_STORYBOARD);
@@ -166,6 +183,36 @@ const App: React.FC = () => {
     } catch (e) {
       console.error("Failed to save stories to localStorage after delete", e);
     }
+  };
+
+  // Debug Mode Retry Handlers
+  const handleRetryCharacter = async () => {
+    if (!characterDescription || !processedBeats[0]?.capturedImage) return;
+    try {
+      setProcessingMessage('Regenerating character image...');
+      const charImg = await generateCharacterImage(characterDescription, processedBeats[0].capturedImage);
+      setCharacterImageBase64(charImg);
+    } catch (err) {
+      console.error("Failed to retry character generation", err);
+    }
+  };
+
+  const handleRetryStyle = async () => {
+    if (!theme) return;
+    try {
+      setProcessingMessage('Regenerating style image...');
+      const styleImg = await generateStyleImage(theme);
+      setStyleImageBase64(styleImg);
+    } catch (err) {
+      console.error("Failed to retry style generation", err);
+    }
+  };
+
+  const handleRetryBeat = async () => {
+    const currentBeat = processedBeats.find(b => b.status === 'processing' || b.capturedImage);
+    if (!currentBeat || !currentBeat.capturedImage || !styleImageBase64 || !characterImageBase64) return;
+    
+    handleCapture(currentBeat.id, currentBeat.capturedImage);
   };
 
   // Effect to wait for processing to finish
@@ -272,10 +319,43 @@ const App: React.FC = () => {
         }
       : {};
 
+  // Get current beat for debug panel
+  const currentBeatForDebug = processedBeats.find(b => b.status === 'processing' || b.status === 'done' || b.capturedImage);
+
   return (
     <div style={appStyle} className="min-h-screen bg-black text-gray-100 flex flex-col transition-all duration-500">
        <div className={`min-h-screen flex flex-col transition-colors duration-500 ${appState === AppState.CAPTURING && styleImageBase64 ? 'bg-black/80' : ''}`}>
         <Header />
+        
+        {/* Debug Mode Checkbox */}
+        <div className="fixed top-4 left-4 z-50 bg-black/90 border border-gray-700 p-3 rounded">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={debugMode}
+              onChange={(e) => setDebugMode(e.target.checked)}
+              className="w-4 h-4 cursor-pointer"
+            />
+            <span className="text-sm text-gray-300 font-semibold">Debug Mode</span>
+          </label>
+        </div>
+
+        {/* Debug Panel */}
+        {debugMode && (
+          <DebugPanel
+            characterImage={characterImageBase64}
+            styleImage={styleImageBase64}
+            currentBeat={currentBeatForDebug ? {
+              capturedImage: currentBeatForDebug.capturedImage,
+              openPoseImage: currentBeatForDebug.openPoseImage || null,
+              generatedImage: currentBeatForDebug.generatedImage
+            } : undefined}
+            onRetryCharacter={characterImageBase64 ? handleRetryCharacter : undefined}
+            onRetryStyle={styleImageBase64 ? handleRetryStyle : undefined}
+            onRetryBeat={currentBeatForDebug?.capturedImage ? handleRetryBeat : undefined}
+          />
+        )}
+
         <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center justify-center">
           {renderContent()}
         </main>

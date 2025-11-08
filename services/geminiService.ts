@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { StoryStructure } from "../types";
+import { generateStoryBeatImage } from "./runwareService";
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -102,48 +103,16 @@ export const generateStoryStructure = async (theme: string, numBeats: number, ch
     }
 };
 
-export const generateImageForBeat = async (imagePrompt: string, userImageBase64: string, styleImageBase64: string, characterImageBase64: string): Promise<string> => {
-    const styleImagePart = {
-        inlineData: {
-            mimeType: 'image/jpeg',
-            data: styleImageBase64,
-        },
-    };
-
-    const characterImagePart = {
-        inlineData: {
-            mimeType: 'image/jpeg',
-            data: characterImageBase64,
-        }
-    }
-    
-    const userImagePart = {
-        inlineData: {
-            mimeType: 'image/jpeg',
-            data: userImageBase64,
-        },
-    };
-
-    const textPart = {
-        text: imagePrompt,
-    };
-    
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts: [styleImagePart, characterImagePart, userImagePart, textPart] },
-        config: {
-            responseModalities: [Modality.IMAGE],
-        },
-    });
-
-    // FIX: Iterate through parts to find the image data, which is safer than assuming the first part is the image.
-    for (const part of response.candidates?.[0]?.content?.parts ?? []) {
-        if (part.inlineData) {
-            return part.inlineData.data;
-        }
-    }
-
-    throw new Error("No image was generated.");
+export const generateImageForBeat = async (
+    imagePrompt: string, 
+    userImageBase64: string, 
+    styleImageBase64: string, 
+    characterImageBase64: string,
+    debugMode: boolean = false
+): Promise<any> => {
+    // Use Runware workflow: OpenPose preprocessing + Qwen edit plus model
+    // The styleImageBase64 is not used in the new workflow, but kept for API compatibility
+    return await generateStoryBeatImage(imagePrompt, userImageBase64, characterImageBase64, debugMode);
 };
 
 

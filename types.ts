@@ -22,6 +22,7 @@ export interface ProcessedBeat extends StoryStructure {
   capturedImage: string | null;
   generatedImage: string | null;
   status: BeatStatus;
+  openPoseImage?: string | null; // Debug: OpenPose preprocessed image
 }
 
 export interface SavedStory {
