@@ -338,7 +338,7 @@ const App: React.FC = () => {
 
   return (
     <div style={appStyle} className="min-h-screen bg-black text-gray-100 flex flex-col transition-all duration-500">
-       <div className={`min-h-screen flex flex-col transition-colors duration-500 ${appState === AppState.CAPTURING && styleImageBase64 ? 'bg-black/80' : ''}`}>
+       <div className={`min-h-screen flex flex-col transition-colors duration-500 ${appState === AppState.CAPTURING && styleImageBase64 ? 'bg-black/30' : ''}`}>
         <Header />
         
         {/* Debug Mode Checkbox */}
