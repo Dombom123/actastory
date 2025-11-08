@@ -151,9 +151,8 @@ export const preprocessWithOpenPose = async (imageBase64: string): Promise<strin
 };
 
 /**
- * Generate story beat image using Runware with OpenPose and character reference
- * Note: You may need to adjust the model parameter to a valid Runware model ID
- * Check available models at: https://runware.ai/models
+ * Generate story beat image using Runware model (runware:108@22)
+ * Uses OpenPose image as input and character image as reference
  */
 export const generateImageWithQwenEditPlus = async (
     prompt: string,
@@ -173,30 +172,20 @@ export const generateImageWithQwenEditPlus = async (
         {
             taskType: "imageInference",
             taskUUID: generateUUID(),
-            model: "runware:100@1", // Stable Diffusion model (adjust as needed)
+            model: "runware:108@22",
             positivePrompt: prompt,
             numberResults: 1,
             height: 1024,
             width: 1024,
-            outputType: "base64Data", // Must be string: 'base64Data', 'dataURI', or 'URL'
-            outputFormat: "WEBP",
+            outputType: "base64Data",
+            outputFormat: "JPEG",
             includeCost: true,
-            CFGScale: 7,
-            steps: 30,
+            checkNSFW: true,
+            CFGScale: 4,
             scheduler: "Default",
-            controlNet: [
-                {
-                    model: "openpose",
-                    guideImage: openPoseDataUrl,
-                    weight: 1.0,
-                    startStep: 0,
-                    endStep: 30,  // Must be <= steps parameter
-                    controlMode: "balanced"
-                }
-            ],
-            // Character reference image
-            referenceImage: characterDataUrl,
-            referenceWeight: 0.8
+            acceleration: "medium",
+            // Use OpenPose and character images as references (must be an array)
+            referenceImages: [openPoseDataUrl, characterDataUrl]
         }
     ];
 

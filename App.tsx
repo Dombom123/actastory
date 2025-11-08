@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<string>('');
   const [numBeats, setNumBeats] = useState<number>(4);
   const [characterDescription, setCharacterDescription] = useState<string>('');
+  const [characterPoseImageBase64, setCharacterPoseImageBase64] = useState<string | null>(null);
   const [characterImageBase64, setCharacterImageBase64] = useState<string | null>(null);
   const [styleImageBase64, setStyleImageBase64] = useState<string | null>(null);
   const [processedBeats, setProcessedBeats] = useState<ProcessedBeat[]>([]);
@@ -60,6 +61,7 @@ const App: React.FC = () => {
     setAudioDataBase64(null);
     setIsAudioLoading(false);
     setCharacterDescription('');
+    setCharacterPoseImageBase64(null);
     setCharacterImageBase64(null);
     setCurrentStory(null);
   };
@@ -85,6 +87,9 @@ const App: React.FC = () => {
     setAppState(AppState.GENERATING_STORY_ASSETS);
     setProcessingMessage('Generating story assets...');
     setError(null);
+    
+    // Store the pose image for potential retries
+    setCharacterPoseImageBase64(poseImageBase64);
 
     try {
       const [charImg, styleImg, storyStructures] = await Promise.all([
@@ -187,13 +192,15 @@ const App: React.FC = () => {
 
   // Debug Mode Retry Handlers
   const handleRetryCharacter = async () => {
-    if (!characterDescription || !processedBeats[0]?.capturedImage) return;
+    if (!characterDescription || !characterPoseImageBase64) return;
     try {
       setProcessingMessage('Regenerating character image...');
-      const charImg = await generateCharacterImage(characterDescription, processedBeats[0].capturedImage);
+      const charImg = await generateCharacterImage(characterDescription, characterPoseImageBase64);
       setCharacterImageBase64(charImg);
+      setProcessingMessage('');
     } catch (err) {
       console.error("Failed to retry character generation", err);
+      setProcessingMessage('');
     }
   };
 
@@ -203,16 +210,18 @@ const App: React.FC = () => {
       setProcessingMessage('Regenerating style image...');
       const styleImg = await generateStyleImage(theme);
       setStyleImageBase64(styleImg);
+      setProcessingMessage('');
     } catch (err) {
       console.error("Failed to retry style generation", err);
+      setProcessingMessage('');
     }
   };
 
-  const handleRetryBeat = async () => {
-    const currentBeat = processedBeats.find(b => b.status === 'processing' || b.capturedImage);
-    if (!currentBeat || !currentBeat.capturedImage || !styleImageBase64 || !characterImageBase64) return;
+  const handleRetryBeat = async (beatId: number) => {
+    const beatToRetry = processedBeats.find(b => b.id === beatId);
+    if (!beatToRetry || !beatToRetry.capturedImage || !styleImageBase64 || !characterImageBase64) return;
     
-    handleCapture(currentBeat.id, currentBeat.capturedImage);
+    handleCapture(beatToRetry.id, beatToRetry.capturedImage);
   };
 
   // Effect to wait for processing to finish
@@ -319,9 +328,6 @@ const App: React.FC = () => {
         }
       : {};
 
-  // Get current beat for debug panel
-  const currentBeatForDebug = processedBeats.find(b => b.status === 'processing' || b.status === 'done' || b.capturedImage);
-
   return (
     <div style={appStyle} className="min-h-screen bg-black text-gray-100 flex flex-col transition-all duration-500">
        <div className={`min-h-screen flex flex-col transition-colors duration-500 ${appState === AppState.CAPTURING && styleImageBase64 ? 'bg-black/80' : ''}`}>
@@ -345,14 +351,10 @@ const App: React.FC = () => {
           <DebugPanel
             characterImage={characterImageBase64}
             styleImage={styleImageBase64}
-            currentBeat={currentBeatForDebug ? {
-              capturedImage: currentBeatForDebug.capturedImage,
-              openPoseImage: currentBeatForDebug.openPoseImage || null,
-              generatedImage: currentBeatForDebug.generatedImage
-            } : undefined}
+            beats={processedBeats}
             onRetryCharacter={characterImageBase64 ? handleRetryCharacter : undefined}
             onRetryStyle={styleImageBase64 ? handleRetryStyle : undefined}
-            onRetryBeat={currentBeatForDebug?.capturedImage ? handleRetryBeat : undefined}
+            onRetryBeat={handleRetryBeat}
           />
         )}
 

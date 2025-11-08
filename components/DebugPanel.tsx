@@ -1,26 +1,45 @@
 import React from 'react';
 
+interface Beat {
+    id: number;
+    capturedImage: string | null;
+    openPoseImage?: string | null;
+    generatedImage: string | null;
+    status: string;
+    storyText?: string;
+}
+
 interface DebugPanelProps {
     characterImage: string | null;
     styleImage: string | null;
-    currentBeat?: {
-        capturedImage: string | null;
-        openPoseImage: string | null;
-        generatedImage: string | null;
-    };
+    beats: Beat[];
     onRetryCharacter?: () => void;
     onRetryStyle?: () => void;
-    onRetryBeat?: () => void;
+    onRetryBeat?: (beatId: number) => void;
 }
 
 const DebugPanel: React.FC<DebugPanelProps> = ({
     characterImage,
     styleImage,
-    currentBeat,
+    beats,
     onRetryCharacter,
     onRetryStyle,
     onRetryBeat
 }) => {
+    // Helper function to ensure image has proper data URL prefix
+    const getImageSrc = (base64Data: string | null, defaultFormat: string = 'jpeg'): string => {
+        if (!base64Data) return '';
+        if (base64Data.startsWith('data:')) {
+            return base64Data;
+        }
+        return `data:image/${defaultFormat};base64,${base64Data}`;
+    };
+
+    // Filter beats that have at least one image (captured, openpose, or generated)
+    const beatsWithImages = beats.filter(beat => 
+        beat.capturedImage || beat.openPoseImage || beat.generatedImage
+    );
+
     return (
         <div className="fixed top-16 right-4 w-80 bg-black/95 border border-yellow-500 p-4 max-h-[80vh] overflow-y-auto z-50">
             <div className="flex items-center gap-2 mb-4 pb-2 border-b border-yellow-500">
@@ -46,7 +65,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
                             )}
                         </div>
                         <img 
-                            src={`data:image/jpeg;base64,${characterImage}`} 
+                            src={getImageSrc(characterImage, 'jpeg')} 
                             alt="Character" 
                             className="w-full aspect-video object-cover"
                         />
@@ -68,21 +87,25 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
                             )}
                         </div>
                         <img 
-                            src={`data:image/jpeg;base64,${styleImage}`} 
+                            src={getImageSrc(styleImage, 'jpeg')} 
                             alt="Style" 
                             className="w-full aspect-video object-cover"
                         />
                     </div>
                 )}
 
-                {/* Current Beat Debug Info */}
-                {currentBeat && (
-                    <div className="border border-yellow-600 p-2">
+                {/* All Beats Debug Info */}
+                {beatsWithImages.map((beat) => (
+                    <div key={beat.id} className="border border-yellow-600 p-2">
                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-yellow-500 font-semibold">Current Beat</span>
-                            {onRetryBeat && currentBeat.generatedImage && (
+                            <span className="text-yellow-500 font-semibold">
+                                Beat {beat.id + 1}
+                                {beat.status === 'processing' && ' (Processing...)'}
+                                {beat.status === 'error' && ' (Error)'}
+                            </span>
+                            {onRetryBeat && beat.capturedImage && (
                                 <button
-                                    onClick={onRetryBeat}
+                                    onClick={() => onRetryBeat(beat.id)}
                                     className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-black text-xs font-bold"
                                 >
                                     Retry
@@ -91,42 +114,42 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
                         </div>
 
                         {/* Captured Webcam Image */}
-                        {currentBeat.capturedImage && (
+                        {beat.capturedImage && (
                             <div className="mb-2">
                                 <span className="text-gray-500 text-xs block mb-1">1. Captured Image</span>
                                 <img 
-                                    src={`data:image/jpeg;base64,${currentBeat.capturedImage}`} 
-                                    alt="Captured" 
+                                    src={getImageSrc(beat.capturedImage, 'jpeg')} 
+                                    alt={`Beat ${beat.id + 1} Captured`} 
                                     className="w-full aspect-video object-cover border border-gray-700"
                                 />
                             </div>
                         )}
 
                         {/* OpenPose Image */}
-                        {currentBeat.openPoseImage && (
+                        {beat.openPoseImage && (
                             <div className="mb-2">
                                 <span className="text-gray-500 text-xs block mb-1">2. OpenPose</span>
                                 <img 
-                                    src={`data:image/jpeg;base64,${currentBeat.openPoseImage}`} 
-                                    alt="OpenPose" 
+                                    src={getImageSrc(beat.openPoseImage, 'webp')} 
+                                    alt={`Beat ${beat.id + 1} OpenPose`} 
                                     className="w-full aspect-video object-cover border border-gray-700"
                                 />
                             </div>
                         )}
 
                         {/* Final Generated Image */}
-                        {currentBeat.generatedImage && (
+                        {beat.generatedImage && (
                             <div>
                                 <span className="text-gray-500 text-xs block mb-1">3. Final Image</span>
                                 <img 
-                                    src={`data:image/jpeg;base64,${currentBeat.generatedImage}`} 
-                                    alt="Generated" 
+                                    src={getImageSrc(beat.generatedImage, 'jpeg')} 
+                                    alt={`Beat ${beat.id + 1} Generated`} 
                                     className="w-full aspect-video object-cover border border-gray-700"
                                 />
                             </div>
                         )}
                     </div>
-                )}
+                ))}
             </div>
         </div>
     );
