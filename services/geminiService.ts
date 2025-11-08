@@ -41,16 +41,17 @@ export const generateCharacterImage = async (description: string, userImageBase6
 }
 
 export const generateStyleParagraph = async (theme: string): Promise<string> => {
-    const prompt = `You are a visual art director. Create a detailed style guide paragraph for a story about '${theme}'. 
+    const prompt = `You are a cinematographer for a LIVE-ACTION film about '${theme}'. Create a VERY SHORT style guide (2-3 sentences max) that describes the photorealistic visual style.
     
-    The paragraph should describe:
-    - Color palette (specific colors and tones)
-    - Lighting style (e.g., dramatic shadows, soft diffused light, golden hour, neon glow)
-    - Texture and visual feel (e.g., painterly, photorealistic, grainy film, smooth digital)
-    - Overall artistic mood and atmosphere
-    - Any specific artistic references or influences
+    MUST focus on REALISTIC/PHOTOREALISTIC styles only:
+    - Camera/cinematography style (e.g., "anamorphic lens", "handheld documentary", "35mm film", "IMAX")
+    - Lighting setup (e.g., "natural window light", "golden hour", "neon practical lights", "high contrast shadows")
+    - Color grading/look (e.g., "desaturated blues", "warm vintage tones", "high contrast black and white", "color blocking with bold primaries")
+    - Film texture if any (e.g., "16mm grain", "clean digital", "70s film stock")
     
-    Write it as a single cohesive paragraph that can be appended to image generation prompts. Be specific and vivid. Do not include any character descriptions.`;
+    The result should look like LIVE ACTION FOOTAGE, not illustrated or painterly.
+    
+    Example: "Shot on 35mm film with natural golden hour lighting. Desaturated color palette with muted greens and warm skin tones. Shallow depth of field with cinematic anamorphic bokeh."`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
