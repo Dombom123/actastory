@@ -5,12 +5,12 @@ import AudioPlayer from './AudioPlayer';
 interface StoryboardProps {
   beats: ProcessedBeat[];
   onReturnToLibrary: () => void;
-  theme: string;
+  themeTitle: string;
   audioDataBase64: string | null;
   isAudioLoading: boolean;
 }
 
-const Storyboard: React.FC<StoryboardProps> = ({ beats, onReturnToLibrary, theme, audioDataBase64, isAudioLoading }) => {
+const Storyboard: React.FC<StoryboardProps> = ({ beats, onReturnToLibrary, themeTitle, audioDataBase64, isAudioLoading }) => {
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
   const [showShareMessage, setShowShareMessage] = useState(false);
 
@@ -99,7 +99,7 @@ const Storyboard: React.FC<StoryboardProps> = ({ beats, onReturnToLibrary, theme
 
       <div className="text-center mb-8">
         <h2 className="text-4xl font-bold text-white">Your Storyboard</h2>
-        <p className="text-xl text-gray-500 mt-2 capitalize">Theme: {theme}</p>
+        <p className="text-xl text-gray-500 mt-2">Theme: {themeTitle}</p>
       </div>
       
       <div className="w-full max-w-sm mx-auto mb-8">

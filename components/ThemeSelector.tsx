@@ -1,30 +1,34 @@
 import React, { useState } from 'react';
+import { storyExamples } from '../story-examples';
 
 interface ThemeSelectorProps {
-  onThemeSelected: (theme: string, numBeats: number) => void;
+  onThemeSelected: (theme: string, themeTitle: string, numBeats: number) => void;
   error: string | null;
 }
 
 const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onThemeSelected, error }) => {
   const [theme, setTheme] = useState('');
+  const [themeTitle, setThemeTitle] = useState('');
   const [numBeats, setNumBeats] = useState(4);
   const beatOptions = [4, 6, 8];
-  const exampleThemes = [
-    "Sci-fi space exploration",
-    "A gritty film noir mystery",
-    "High fantasy dragon quest",
-    "Cooking show disaster"
-  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (theme.trim()) {
-      onThemeSelected(theme, numBeats);
+      // If no title set (user typed freely), use first 50 chars of theme as title
+      const displayTitle = themeTitle || theme.substring(0, 50) + (theme.length > 50 ? '...' : '');
+      onThemeSelected(theme, displayTitle, numBeats);
     }
   };
 
-  const handleExampleClick = (example: string) => {
-    setTheme(example);
+  const handleExampleClick = (content: string, title: string) => {
+    setTheme(content);
+    setThemeTitle(title);
+  };
+
+  const handleManualInput = (value: string) => {
+    setTheme(value);
+    setThemeTitle(''); // Clear title when user types manually
   };
 
   return (
@@ -41,7 +45,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onThemeSelected, error })
             id="theme"
             type="text"
             value={theme}
-            onChange={(e) => setTheme(e.target.value)}
+            onChange={(e) => handleManualInput(e.target.value)}
             placeholder="e.g., 'A silent film comedy'"
             className="w-full p-4 bg-gray-900 border border-gray-700 focus:outline-none focus:border-white transition-colors placeholder-gray-600"
           />
@@ -50,14 +54,14 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onThemeSelected, error })
         <div className="pt-2">
             <p className="text-sm text-gray-600 mb-3">Or try an example:</p>
             <div className="flex flex-wrap justify-center gap-2">
-                {exampleThemes.map((example) => (
+                {storyExamples.map((example) => (
                     <button
-                        key={example}
+                        key={example.title}
                         type="button"
-                        onClick={() => handleExampleClick(example)}
+                        onClick={() => handleExampleClick(example.content, example.title)}
                         className="px-3 py-1 bg-transparent border border-gray-800 text-gray-400 text-sm hover:bg-gray-900 hover:text-white transition-colors"
                     >
-                        {example}
+                        {example.title}
                     </button>
                 ))}
             </div>

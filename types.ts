@@ -28,6 +28,7 @@ export interface ProcessedBeat extends StoryStructure {
 export interface SavedStory {
   id: string;
   theme: string;
+  themeTitle?: string; // Optional for backward compatibility
   characterImageBase64: string;
   processedBeats: ProcessedBeat[];
   createdAt: string;

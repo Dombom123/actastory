@@ -9,9 +9,9 @@ interface StoryLibraryProps {
 }
 
 const StoryLibrary: React.FC<StoryLibraryProps> = ({ stories, onViewStory, onDeleteStory, onCreateNew }) => {
-  const handleDelete = (e: React.MouseEvent, storyId: string, theme: string) => {
+  const handleDelete = (e: React.MouseEvent, storyId: string, themeTitle: string) => {
     e.stopPropagation(); // Prevent triggering onViewStory
-    if (window.confirm(`Are you sure you want to delete the story "${theme}"? This cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete the story "${themeTitle}"? This cannot be undone.`)) {
       onDeleteStory(storyId);
     }
   };
@@ -43,16 +43,16 @@ const StoryLibrary: React.FC<StoryLibraryProps> = ({ stories, onViewStory, onDel
             >
               <img
                 src={`data:image/jpeg;base64,${story.characterImageBase64}`}
-                alt={story.theme}
+                alt={story.themeTitle || story.theme}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="font-bold text-white truncate capitalize">{story.theme}</h3>
+                <h3 className="font-bold text-white truncate">{story.themeTitle || story.theme}</h3>
                 <p className="text-xs text-gray-500">{new Date(story.createdAt).toLocaleDateString()}</p>
               </div>
               <button
-                onClick={(e) => handleDelete(e, story.id, story.theme)}
+                onClick={(e) => handleDelete(e, story.id, story.themeTitle || story.theme)}
                 className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-black/50 text-gray-400 hover:bg-white hover:text-black transition-colors opacity-0 group-hover:opacity-100"
                 aria-label="Delete story"
               >

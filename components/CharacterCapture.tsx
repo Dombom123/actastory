@@ -6,8 +6,10 @@ interface CharacterCaptureProps {
 
 const CharacterCapture: React.FC<CharacterCaptureProps> = ({ onCapture }) => {
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const setupCamera = useCallback(async () => {
     try {
@@ -29,10 +31,30 @@ const CharacterCapture: React.FC<CharacterCaptureProps> = ({ onCapture }) => {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
     };
   }, [setupCamera]);
+
+  useEffect(() => {
+    if (countdown !== null && countdown > 0) {
+      countdownTimerRef.current = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      captureImage();
+      setCountdown(null);
+    }
+
+    return () => {
+      if (countdownTimerRef.current) {
+        clearTimeout(countdownTimerRef.current);
+      }
+    };
+  }, [countdown]);
   
-  const handleCaptureClick = () => {
+  const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -54,6 +76,10 @@ const CharacterCapture: React.FC<CharacterCaptureProps> = ({ onCapture }) => {
     }
   };
 
+  const handleCaptureClick = () => {
+    setCountdown(3); // Start 3-second countdown
+  };
+
   if (cameraError) {
     return <div className="text-center text-red-400 p-8 bg-red-900/50 border border-red-500">{cameraError}</div>;
   }
@@ -66,12 +92,20 @@ const CharacterCapture: React.FC<CharacterCaptureProps> = ({ onCapture }) => {
             
             <div className="w-full relative aspect-video bg-black overflow-hidden border border-gray-700">
                 <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform -scale-x-100"></video>
+                {countdown !== null && countdown > 0 && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 px-6 py-3 rounded-lg border-2 border-white">
+                    <div className="text-white text-5xl font-bold">
+                      {countdown}
+                    </div>
+                  </div>
+                )}
             </div>
             <canvas ref={canvasRef} className="hidden"></canvas>
             
             <button 
                 onClick={handleCaptureClick}
-                className="mt-8 px-12 py-4 bg-white text-black font-bold text-2xl hover:bg-gray-300 transition-colors flex items-center justify-center gap-3 w-full"
+                disabled={countdown !== null}
+                className="mt-8 px-12 py-4 bg-white text-black font-bold text-2xl hover:bg-gray-300 transition-colors flex items-center justify-center gap-3 w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M2 6a2 2 0 012-2h1.586a1 1 0 00.707-.293l1.414-1.414A1 1 0 018.414 2h3.172a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293H16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />

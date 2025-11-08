@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 
 interface CharacterCreatorProps {
   onDescriptionSubmitted: (description: string) => void;
-  theme: string;
+  themeTitle: string;
 }
 
-const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onDescriptionSubmitted, theme }) => {
+const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onDescriptionSubmitted, themeTitle }) => {
   const [description, setDescription] = useState('');
   
   const exampleCharacters = [
-    "A grizzled space marine with a cybernetic eye",
-    "An elegant elf sorceress with flowing silver hair",
-    "A bumbling 1920s detective in a trench coat",
-    "A cheerful robot chef with too many arms"
+    "A curious young boy with messy hair and overalls",
+    "A playful girl with pigtails and a colorful dress",
+    "A mischievous child with freckles and a striped shirt",
+    "A dreamy child with wide eyes and worn-out shoes"
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,8 +28,8 @@ const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onDescriptionSubmit
 
   return (
     <div className="w-full max-w-lg text-center bg-black p-8 border border-gray-800">
-      <h2 className="text-3xl font-bold text-white mb-2">Describe Your Character</h2>
-      <p className="text-gray-500 mb-6 capitalize">For your story about: <span className="text-white">{theme}</span></p>
+      <h2 className="text-3xl font-bold text-white mb-2">Who Will Act Out Your Story?</h2>
+      <p className="text-gray-500 mb-6">Story: <span className="text-white">{themeTitle}</span></p>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -38,7 +38,7 @@ const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onDescriptionSubmit
             id="character"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., 'A clumsy knight with mismatched armor'"
+            placeholder="e.g., 'A cheerful boy with bright eyes and a red cap'"
             rows={3}
             className="w-full p-4 bg-gray-900 border border-gray-700 focus:outline-none focus:border-white transition-colors placeholder-gray-600 resize-none"
           />

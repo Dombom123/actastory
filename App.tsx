@@ -17,6 +17,7 @@ const App: React.FC = () => {
   
   // Story Creation State
   const [theme, setTheme] = useState<string>('');
+  const [themeTitle, setThemeTitle] = useState<string>('');
   const [numBeats, setNumBeats] = useState<number>(4);
   const [characterDescription, setCharacterDescription] = useState<string>('');
   const [characterPoseImageBase64, setCharacterPoseImageBase64] = useState<string | null>(null);
@@ -54,6 +55,7 @@ const App: React.FC = () => {
 
   const resetCreationState = () => {
     setTheme('');
+    setThemeTitle('');
     setNumBeats(4);
     setProcessedBeats([]);
     setError(null);
@@ -73,8 +75,9 @@ const App: React.FC = () => {
     setAppState(AppState.THEME_SELECTION);
   };
 
-  const handleThemeSelected = (selectedTheme: string, selectedNumBeats: number) => {
+  const handleThemeSelected = (selectedTheme: string, selectedThemeTitle: string, selectedNumBeats: number) => {
     setTheme(selectedTheme);
+    setThemeTitle(selectedThemeTitle);
     setNumBeats(selectedNumBeats);
     setError(null);
     setAppState(AppState.CHARACTER_CREATION);
@@ -175,6 +178,7 @@ const App: React.FC = () => {
     if (storyToView) {
       setCurrentStory(storyToView);
       setTheme(storyToView.theme);
+      setThemeTitle(storyToView.themeTitle || storyToView.theme.substring(0, 50));
       setCharacterImageBase64(storyToView.characterImageBase64);
       setProcessedBeats(storyToView.processedBeats);
       // We will fetch audio again when viewing
@@ -255,6 +259,7 @@ const App: React.FC = () => {
         const newStory: SavedStory = {
           id: `story-${Date.now()}`,
           theme,
+          themeTitle,
           characterImageBase64,
           processedBeats,
           createdAt: new Date().toISOString(),
@@ -300,7 +305,7 @@ const App: React.FC = () => {
       case AppState.THEME_SELECTION:
         return <ThemeSelector onThemeSelected={handleThemeSelected} error={error} />;
       case AppState.CHARACTER_CREATION:
-        return <CharacterCreator onDescriptionSubmitted={handleDescriptionSubmitted} theme={theme} />;
+        return <CharacterCreator onDescriptionSubmitted={handleDescriptionSubmitted} themeTitle={themeTitle} />;
       case AppState.CHARACTER_CAPTURE:
         return <CharacterCapture onCapture={handleCharacterCaptured} />;
       case AppState.GENERATING_STORY_ASSETS:
@@ -317,7 +322,7 @@ const App: React.FC = () => {
         return <Storyboard 
                   beats={processedBeats} 
                   onReturnToLibrary={handleReturnToLibrary} 
-                  theme={theme}
+                  themeTitle={themeTitle}
                   audioDataBase64={audioDataBase64}
                   isAudioLoading={isAudioLoading}
                 />;
