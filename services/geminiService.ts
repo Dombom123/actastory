@@ -40,6 +40,26 @@ export const generateCharacterImage = async (description: string, userImageBase6
     throw new Error("No character image was generated.");
 }
 
+export const generateStyleParagraph = async (theme: string): Promise<string> => {
+    const prompt = `You are a visual art director. Create a detailed style guide paragraph for a story about '${theme}'. 
+    
+    The paragraph should describe:
+    - Color palette (specific colors and tones)
+    - Lighting style (e.g., dramatic shadows, soft diffused light, golden hour, neon glow)
+    - Texture and visual feel (e.g., painterly, photorealistic, grainy film, smooth digital)
+    - Overall artistic mood and atmosphere
+    - Any specific artistic references or influences
+    
+    Write it as a single cohesive paragraph that can be appended to image generation prompts. Be specific and vivid. Do not include any character descriptions.`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+    });
+
+    return response.text.trim();
+};
+
 export const generateStyleImage = async (theme: string): Promise<string> => {
     const prompt = `Create a single piece of concept art that defines a unique visual style for a story about '${theme}'. The image should establish the color palette, lighting, texture, and overall mood. Do not include any characters or text. High detail, cinematic, 16:9 aspect ratio.`;
 
@@ -108,11 +128,17 @@ export const generateImageForBeat = async (
     userImageBase64: string, 
     styleImageBase64: string, 
     characterImageBase64: string,
-    debugMode: boolean = false
+    debugMode: boolean = false,
+    styleParagraph?: string
 ): Promise<any> => {
+    // Append style paragraph to the image prompt if provided
+    const fullPrompt = styleParagraph 
+        ? `${imagePrompt}\n\nSTYLE GUIDE: ${styleParagraph}`
+        : imagePrompt;
+    
     // Use Runware workflow: OpenPose preprocessing + Qwen edit plus model
     // The styleImageBase64 is not used in the new workflow, but kept for API compatibility
-    return await generateStoryBeatImage(imagePrompt, userImageBase64, characterImageBase64, debugMode);
+    return await generateStoryBeatImage(fullPrompt, userImageBase64, characterImageBase64, debugMode);
 };
 
 

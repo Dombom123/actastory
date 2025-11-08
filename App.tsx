@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppState, ProcessedBeat, StoryStructure, SavedStory } from './types';
-import { generateStoryStructure, generateImageForBeat, generateSpeech, generateStyleImage, generateCharacterImage } from './services/geminiService';
+import { generateStoryStructure, generateImageForBeat, generateSpeech, generateStyleImage, generateStyleParagraph, generateCharacterImage } from './services/geminiService';
 import ThemeSelector from './components/ThemeSelector';
 import CharacterCreator from './components/CharacterCreator';
 import CharacterCapture from './components/CharacterCapture';
@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [characterPoseImageBase64, setCharacterPoseImageBase64] = useState<string | null>(null);
   const [characterImageBase64, setCharacterImageBase64] = useState<string | null>(null);
   const [styleImageBase64, setStyleImageBase64] = useState<string | null>(null);
+  const [styleParagraph, setStyleParagraph] = useState<string>('');
   const [processedBeats, setProcessedBeats] = useState<ProcessedBeat[]>([]);
   
   // UI/Feedback State
@@ -58,6 +59,7 @@ const App: React.FC = () => {
     setError(null);
     setProcessingMessage('');
     setStyleImageBase64(null);
+    setStyleParagraph('');
     setAudioDataBase64(null);
     setIsAudioLoading(false);
     setCharacterDescription('');
@@ -92,14 +94,16 @@ const App: React.FC = () => {
     setCharacterPoseImageBase64(poseImageBase64);
 
     try {
-      const [charImg, styleImg, storyStructures] = await Promise.all([
+      const [charImg, styleImg, stylePara, storyStructures] = await Promise.all([
         generateCharacterImage(characterDescription, poseImageBase64),
         generateStyleImage(theme),
+        generateStyleParagraph(theme),
         generateStoryStructure(theme, numBeats, characterDescription)
       ]);
 
       setCharacterImageBase64(charImg);
       setStyleImageBase64(styleImg);
+      setStyleParagraph(stylePara);
       
       setProcessedBeats(storyStructures.map((structure: StoryStructure, index: number) => ({
         id: index,
@@ -129,7 +133,7 @@ const App: React.FC = () => {
       beat.id === beatId ? { ...beat, capturedImage: imageBase64, status: 'processing' } : beat
     ));
 
-    generateImageForBeat(beatToProcess.imagePrompt, imageBase64, styleImageBase64, characterImageBase64, debugMode)
+    generateImageForBeat(beatToProcess.imagePrompt, imageBase64, styleImageBase64, characterImageBase64, debugMode, styleParagraph)
       .then(result => {
         if (debugMode && typeof result === 'object' && 'openPoseImage' in result) {
           // Debug mode: result contains both openPose and final image
@@ -207,9 +211,13 @@ const App: React.FC = () => {
   const handleRetryStyle = async () => {
     if (!theme) return;
     try {
-      setProcessingMessage('Regenerating style image...');
-      const styleImg = await generateStyleImage(theme);
+      setProcessingMessage('Regenerating style...');
+      const [styleImg, stylePara] = await Promise.all([
+        generateStyleImage(theme),
+        generateStyleParagraph(theme)
+      ]);
       setStyleImageBase64(styleImg);
+      setStyleParagraph(stylePara);
       setProcessingMessage('');
     } catch (err) {
       console.error("Failed to retry style generation", err);
@@ -351,6 +359,7 @@ const App: React.FC = () => {
           <DebugPanel
             characterImage={characterImageBase64}
             styleImage={styleImageBase64}
+            styleParagraph={styleParagraph}
             beats={processedBeats}
             onRetryCharacter={characterImageBase64 ? handleRetryCharacter : undefined}
             onRetryStyle={styleImageBase64 ? handleRetryStyle : undefined}

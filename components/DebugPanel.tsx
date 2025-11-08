@@ -12,6 +12,7 @@ interface Beat {
 interface DebugPanelProps {
     characterImage: string | null;
     styleImage: string | null;
+    styleParagraph: string;
     beats: Beat[];
     onRetryCharacter?: () => void;
     onRetryStyle?: () => void;
@@ -21,6 +22,7 @@ interface DebugPanelProps {
 const DebugPanel: React.FC<DebugPanelProps> = ({
     characterImage,
     styleImage,
+    styleParagraph,
     beats,
     onRetryCharacter,
     onRetryStyle,
@@ -72,11 +74,11 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
                     </div>
                 )}
 
-                {/* Style Image */}
-                {styleImage && (
+                {/* Style Image & Paragraph */}
+                {(styleImage || styleParagraph) && (
                     <div className="border border-gray-700 p-2">
                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-gray-400 font-semibold">Style Image</span>
+                            <span className="text-gray-400 font-semibold">Style Guide</span>
                             {onRetryStyle && (
                                 <button
                                     onClick={onRetryStyle}
@@ -86,11 +88,19 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
                                 </button>
                             )}
                         </div>
-                        <img 
-                            src={getImageSrc(styleImage, 'jpeg')} 
-                            alt="Style" 
-                            className="w-full aspect-video object-cover"
-                        />
+                        {styleImage && (
+                            <img 
+                                src={getImageSrc(styleImage, 'jpeg')} 
+                                alt="Style" 
+                                className="w-full aspect-video object-cover mb-2"
+                            />
+                        )}
+                        {styleParagraph && (
+                            <div className="text-gray-300 text-xs p-2 bg-gray-900 border border-gray-800 rounded">
+                                <div className="text-gray-500 text-[10px] mb-1 font-semibold">STYLE PARAGRAPH (appended to all prompts):</div>
+                                {styleParagraph}
+                            </div>
+                        )}
                     </div>
                 )}
 
